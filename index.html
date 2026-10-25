@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/><meta name="theme-color" content="#073b30"/><title>Football Boy — A night at Paradise</title></head>
+<body>
+<div class="shell">
+<header><a class="brand" href="./" aria-label="Football Boy home"><span class="brand-ball">✦</span> FOOTBALL<span>BOY</span><i>01</i></a><div class="edition"><span class="live-dot"></span> THE PARADISE EDITION</div><button id="sound" class="icon-button" aria-label="Mute sound" aria-pressed="true">SOUND <span id="sound-label">ON</span> ♫</button></header>
+<main><div class="intro"><div><div class="eyebrow">A LITTLE BHOY. A BIG NIGHT.</div><h1>Welcome to <em>Paradise.</em></h1><p>Run for glory. Jump, shoot, and keep the dream alive.</p></div><div class="level-stamp"><span>LEVEL 01</span><strong>CELTIC PARK</strong><small>GLASGOW · UNDER THE LIGHTS</small></div></div>
+<section class="game-frame" aria-label="Football Boy game"><div class="game-top"><div class="match-label"><span class="live-dot"></span> MATCH NIGHT <span class="separator">/</span> CELTIC PARK</div><div class="game-actions"><button id="fullscreen" aria-label="Enter fullscreen" aria-pressed="false">⛶ <span>FULLSCREEN</span></button><button id="restart" aria-label="Restart level">↻ <span>RESTART</span></button><button id="pause" aria-label="Pause game">Ⅱ <span>PAUSE</span></button></div></div>
+<div class="viewport"><div id="game"></div><div class="hud"><div class="health"><small>KEEP THE DREAM ALIVE</small><span id="hearts">♥ ♥ ♥ ♥ ♥</span></div><div class="special-hud"><div><small>SPECIAL POWER</small><span id="special-count">0 / 4</span></div><div class="special-track"><div id="special-fill"></div></div><strong id="special-name">RAINBOW FLICK</strong></div><div class="score"><small>DEFENDERS BEATEN</small><strong id="score">00</strong></div></div>
+<div id="overlay" class="overlay"><div class="overlay-card"><div class="tag" id="overlay-tag">YOUR HOME. YOUR TURF.</div><h2 id="overlay-title">A night at<br/><em>Paradise.</em></h2><p id="overlay-description">One football. A stadium full of believers.<br/>Charge four knockouts for a special.<br/>Survive the run. Beat the keeper.</p>
+<div class="level-setup" id="level-setup">
+  <div class="level-setup-header">CHOOSE YOUR MATCH</div>
+  <div class="level-pills" role="radiogroup" aria-label="Choose match level">
+    <button type="button" class="level-pill active" data-level="celtic" aria-checked="true" role="radio">
+      <span class="pill-badge">LEVEL 01</span>
+      <span class="pill-name">CELTIC PARK</span>
+      <span class="pill-match">Celtic vs Rangers</span>
+      <span class="pill-kit-preview kit-celtic" aria-hidden="true"></span>
+    </button>
+    <button type="button" class="level-pill" data-level="holytown" aria-checked="false" role="radio">
+      <span class="pill-badge">LEVEL 02</span>
+      <span class="pill-name">HOLYTOWN COLTS</span>
+      <span class="pill-match">Holytown vs Yett Farm</span>
+      <span class="pill-kit-preview kit-holytown" aria-hidden="true"></span>
+    </button>
+  </div>
+</div>
+<button id="play" class="play-button">LET’S PLAY <span>→</span></button><small id="overlay-hint">AUTO RUN &nbsp; · &nbsp; SPACE TO JUMP &nbsp; · &nbsp; RIGHT ⌥ / X TO SHOOT</small></div></div>
+<div id="penalty-ui" class="penalty-ui hidden">
+ <div class="penalty-heading"><small>THE LAST LINE OF DEFENCE</small><h3>The last kick.</h3><p>Two goals. Three shots. Make Paradise roar.</p></div>
+ <div class="penalty-tally"><small>GOALS <b id="penalty-goals">0 / 2</b></small><span id="penalty-attempt">SHOT 1 OF 3</span><div id="penalty-dots">○ ○ ○</div></div>
+ <div id="aim-grid" class="aim-grid" role="group" aria-label="Choose one of nine goal squares"></div>
+ <div id="keeper-hint" class="keeper-hint">Watch the keeper’s amber squares.</div>
+ <div class="penalty-console"><div class="penalty-aim-label">AIM <strong id="aim-label">TOP RIGHT</strong></div><div class="shot-power-label"><span id="shot-instruction">HOLD ⌥ / X TO POWER UP</span><b id="shot-power-value">0%</b></div><div class="shot-power-track"><span class="shot-sweet-spot"></span><span id="shot-power-marker"></span></div><div class="shot-scale"><span>LOW: DROPS ↓</span><span>65–92%: ON TARGET</span><span>TOO MUCH ↑</span></div><button id="penalty-shoot">HOLD TO SHOOT <span>●</span></button><p id="shot-feedback" aria-live="polite">Click a square, use arrows, or press 1–9.<br/>Release in the green zone. He covers two squares.</p></div>
+ <div id="penalty-verdict" class="penalty-verdict" aria-live="polite"></div>
+</div>
+<div id="toast" aria-live="polite"></div><div class="mobile-controls" aria-label="Touch controls"><button type="button" class="side-button side-jump" data-control="jump">JUMP <span>↑</span></button><button type="button" class="side-button side-shoot" data-control="shoot">SHOOT <span>●</span></button></div><div class="location-badge">✦ <span>PARADISE, GLASGOW</span></div></div>
+<div class="game-bottom"><div class="progress-label">THE RUN <span id="progress-label">0%</span></div><div class="progress-track"><div id="progress"></div></div><span class="finish-label">THE LAST KICK ⚑</span></div>
+</section>
+<div class="below-game"><div class="controls"><div><span>AUTO RUN →</span></div><div><kbd class="wide">SPACE</kbd><span>JUMP</span></div><div><kbd aria-label="Right Option">⌥</kbd><span class="or">/</span><kbd>X</kbd><span>SHOOT</span></div><div><kbd>P</kbd><span>PAUSE</span></div></div><p>A wee touch of magic. <span>Made for the love of the game.</span></p></div>
+<footer><span>FOOTBALL BOY <b>© 2026</b></span><span>90 MINUTES? TRY MAKING IT TO THE OTHER END.</span><span class="footer-star">✦</span></footer>
+</main></div><script type="module" src="/src/main.ts"></script></body></html>

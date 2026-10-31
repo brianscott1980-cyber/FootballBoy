@@ -4,7 +4,7 @@ const state=(page:Page)=>page.evaluate(()=>(window as any).footballBoy);
 async function giantFixture(page:Page,kind='brute',x=700){
  await page.goto('/',{waitUntil:'domcontentloaded'});await page.waitForFunction(()=>(window as any).footballBoy);await page.getByRole('button',{name:'LET’S PLAY'}).click();
  await expect.poll(async()=>(await state(page)).mode).toBe('playing');
- return page.evaluate(async({kind,x})=>{const entry=[...document.scripts].find(s=>s.src.includes('/src/main.ts'))!.src;const {game}=await import(/* @vite-ignore */ entry);const match=game.scene.getScene('match');const index=match.enemies.findIndex((e:any)=>e.kind===kind);match.enemies.forEach((e:any,i:number)=>e.sprite.setPosition(i===index?x:14000+i*100,530-49*e.scale));return index;},{kind,x});
+ return page.evaluate(async({kind,x})=>{const entry=[...document.scripts].find(s=>s.src.includes('/src/main.ts'))!.src;const {game}=await import(/* @vite-ignore */ entry);const match=game.scene.getScene('match');const index=match.enemies.findIndex((e:any)=>e.kind===kind);match.enemies.forEach((e:any,i:number)=>e.sprite.setPosition(i===index?x:14000+i*100,425-49*e.scale));return index;},{kind,x});
 }
 test('the squad has distinct profiles and larger players take two hits',()=>{
  const squad=Array.from({length:12},(_,i)=>enemyProfile(i));expect(new Set(squad.map(e=>e.kind)).size).toBe(3);
@@ -28,8 +28,8 @@ test('two separate head landings are needed for a big player',async({page})=>{
 });
 for(const [specialIndex,special] of ['RAINBOW FLICK','BICYCLE KICK','FIREBALL','WHISTLE BLAST'].entries())test(`${special} counts as one hit on a big player`,async({page})=>{
  const index=await giantFixture(page,'brute',specialIndex===0?970:700);
- await page.evaluate(async(specialIndex)=>{const entry=[...document.scripts].find(s=>s.src.includes('/src/main.ts'))!.src;const {game}=await import(/* @vite-ignore */ entry);const match=game.scene.getScene('match');match.power=100;match.specialIndex=specialIndex;},specialIndex);
- await page.keyboard.press('x');await expect.poll(async()=>(await state(page)).enemies[index].hp).toBe(1);
+ await page.evaluate(async(specialIndex)=>{const entry=[...document.scripts].find(s=>s.src.includes('/src/main.ts'))!.src;const {game}=await import(/* @vite-ignore */ entry);const match=game.scene.getScene('match');match.power=100;match.specialIndex=specialIndex;match.shoot(true,['RAINBOW FLICK','BICYCLE KICK','FIREBALL','WHISTLE BLAST'][specialIndex]);},specialIndex);
+ await expect.poll(async()=>(await state(page)).enemies[index].hp).toBe(1);
  await expect.poll(async()=>(await state(page)).activeSpecial,{timeout:4000}).toBe(null);
  const s=await state(page);expect(s.enemies[index].hp).toBe(1);expect(s.enemies[index].state).not.toBe('down');expect(s.score).toBe(0);expect(s.power).toBe(0);
 });

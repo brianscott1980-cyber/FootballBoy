@@ -1,0 +1,25 @@
+services:
+  footballboy:
+    build: .
+    image: footballboy:local
+    container_name: footballboy
+    restart: always
+    ports:
+      - '192.168.0.101:3010:3010'
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=32m
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 128m
+    pids_limit: 100
+    networks: [footballboy]
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: '3'
+networks:
+  footballboy:
+    name: footballboy

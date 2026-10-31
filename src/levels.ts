@@ -1,4 +1,4 @@
-export type LevelId = 'celtic' | 'holytown';
+export type LevelId = 'celtic' | 'holytown' | 'madrid';
 
 export interface LevelConfig {
   id: LevelId;
@@ -45,7 +45,7 @@ export const LEVELS: Record<LevelId, LevelConfig> = {
     eyebrow: 'A LITTLE BHOY. A BIG NIGHT.',
     title: 'A night at<br/><em>Paradise.</em>',
     description: 'One football. A stadium full of believers.<br/>Charge four knockouts for a special.<br/>Survive the run. Beat the keeper.',
-    hint: 'AUTO RUN · SPACE TO JUMP · RIGHT ⌥ / X TO SHOOT',
+    hint: 'SPACE: JUMP / X: SHOOT / C: SPECIAL / V: WHISTLE',
     location: 'PARADISE, GLASGOW',
     matchLabel: 'MATCH NIGHT / CELTIC PARK',
     startToast: 'WELCOME TO PARADISE',
@@ -66,6 +66,21 @@ export const LEVELS: Record<LevelId, LevelConfig> = {
     penaltySummaryWon: 'The whole stadium is on its feet.',
     penaltySummaryLost: 'Retry the final challenge. Your run is saved.',
   },
+  madrid: {
+    id:'madrid',name:'MADRID VS PSG',tag:'LEVEL 03 / MADRID',badge:'MADRID, SPAIN',
+    teamName:'Real Madrid',opponentName:'PSG',kitName:'Both teams in Madrid white',
+    eyebrow:'MADRID VS PSG / ALL IN WHITE',title:'Magic in<br/><em>Madrid.</em>',
+    description:'Madrid vs PSG. Both sides in Madrid white.<br/>Four knockouts charge the overhead flick.<br/>Drop an explosive finish onto the closest opponent!',
+    hint:'SPACE: JUMP / X: SHOOT / C: SPECIAL / V: WHISTLE',location:'MADRID, SPAIN',
+    matchLabel:'EUROPEAN NIGHT / MADRID VS PSG',startToast:'HALA MADRID!',
+    backdropTexture:'stadium-madrid',pitchTexture:'pitch',platformTexture:'platform',prefix:'madrid-',
+    introBanner:'ALL WHITE.\nALL MAGIC.',benchLabels:['HALA MADRID','EUROPEAN NIGHTS','ONE OVERHEAD FINISH'],
+    wonHeader:'FULL TIME. MADRID MAGIC.',wonTitle:'Madrid.<br/><em>Magnificent.</em>',
+    wonText:(hearts,score)=>hearts+' hearts left. '+score+' PSG defenders beaten.',
+    lostHeader:'KEEP BELIEVING.',lostTitle:'Another night?<br/><em>Hala Madrid.</em>',lostText:'PSG held the line. Charge your flick and try again.',
+    penaltyHeroWon:'MADRID HAS A NEW HERO.',penaltyHeroLost:'PSG DENIES THE FINISH.',
+    penaltySummaryWon:'The Madrid crowd celebrates a European night to remember.',penaltySummaryLost:'Your run is saved. Retry the final shots.',
+  },
   holytown: {
     id: 'holytown',
     name: 'HOLYTOWN COLTS',
@@ -77,7 +92,7 @@ export const LEVELS: Record<LevelId, LevelConfig> = {
     eyebrow: 'HOLYTOWN COLTS VS YETT FARM',
     title: 'The Colts at<br/><em>Holytown.</em>',
     description: 'Artificial turf under the open daylight.<br/>Face Yett Farm in the community derby.<br/>Charge four knockouts and take the trophy!',
-    hint: 'AUTO RUN · SPACE TO JUMP · RIGHT ⌥ / X TO SHOOT',
+    hint: 'SPACE: JUMP / X: SHOOT / C: SPECIAL / V: WHISTLE',
     location: 'HOLYTOWN, LANARKSHIRE',
     matchLabel: 'DAYLIGHT DERBY / HOLYTOWN COLTS VS YETT FARM',
     startToast: 'MON THE COLTS!',

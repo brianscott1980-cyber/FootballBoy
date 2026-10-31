@@ -15,6 +15,20 @@ function limb(c: Ctx, x: number, y: number, tx: number, ty: number, color: strin
   c.strokeStyle = color; c.lineWidth = width; c.lineCap = 'round'; c.beginPath(); c.moveTo(x,y); c.lineTo(tx,ty); c.stroke();
 }
 export function makeArt(scene: Phaser.Scene) {
+  canvas(scene,'stadium-madrid',1800,640,c=>{
+    const sky=c.createLinearGradient(0,0,0,640);sky.addColorStop(0,'#10152f');sky.addColorStop(1,'#485c83');c.fillStyle=sky;c.fillRect(0,0,1800,640);
+    for(let tier=0;tier<3;tier++){
+      const y=145+tier*85;c.fillStyle='#1a2546';c.fillRect(0,y,1800,78);
+      for(let row=0;row<9;row++)for(let x=0;x<1800;x+=8){c.fillStyle=(x/8+row+tier)%5?'#dce5f2':'#8d7cca';c.fillRect(x+(row%2)*3,y+row*7,3,4);}
+      c.fillStyle='#657390';c.fillRect(0,y+73,1800,7);
+    }
+    c.strokeStyle='#bac9e0';c.lineWidth=8;c.beginPath();c.ellipse(900,105,1050,65,0,0,Math.PI*2);c.stroke();
+    for(let x=50;x<1800;x+=180){c.fillStyle='#eff8ff';c.shadowColor='#c9e3ff';c.shadowBlur=24;c.fillRect(x,96,60,6);c.shadowBlur=0;}
+    c.fillStyle='#ded6b6';c.font='bold 26px sans-serif';c.textAlign='center';c.fillText('MADRID  /  EUROPEAN NIGHTS',900,130);
+    c.fillStyle='#30274c';c.fillRect(0,400,1800,25);c.font='bold 13px sans-serif';c.fillStyle='#f3e7bb';
+    for(let x=100;x<1800;x+=300)c.fillText(x%2?'MADRID VS PSG':'HALA MADRID',x,418);
+    c.fillStyle='#285334';c.fillRect(0,425,1800,215);
+  });
   canvas(scene,'stadium',1800,640,c=>{
     // Pitch-side view inspired by a European night at Celtic Park.
     const sky=c.createLinearGradient(0,0,0,530);

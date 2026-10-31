@@ -1,7 +1,7 @@
 import * as Phaser from 'phaser';
 import { stadiumAudio } from './audio';
 import { keeperPair, resolveShot, shotPower, penaltyDecided, SHOTS_ALLOWED, GOALS_REQUIRED } from './rules';
-import { LevelId } from './levels';
+import { LevelId, LEVELS } from './levels';
 
 const $=<T extends HTMLElement=HTMLElement>(id:string)=>document.getElementById(id) as T;
 const LABELS=['TOP LEFT','TOP CENTRE','TOP RIGHT','MIDDLE LEFT','CENTRE','MIDDLE RIGHT','BOTTOM LEFT','BOTTOM CENTRE','BOTTOM RIGHT'];
@@ -25,9 +25,9 @@ export class PenaltyScene extends Phaser.Scene {
     this.levelId=data.levelId??'celtic';
     this.onComplete=data.onComplete;this.playSound=data.sound;this.phase='aim';this.aim=2;this.power=0;this.chargeMs=0;this.goals=0;this.shots=0;this.history=[];this.lastResult=null;this.flightProgress=0;this.leanTimer=0;
   }
-  private get prefix(){return this.levelId==='holytown'?'holytown-':'';}
+  private get prefix(){return LEVELS[this.levelId].prefix;}
   create(){
-    const bgKey=this.levelId==='holytown'?'stadium-holytown':'stadium';
+    const bgKey=LEVELS[this.levelId].backdropTexture;
     this.background=this.add.image(0,0,bgKey).setOrigin(0).setAlpha(this.levelId==='holytown'?0.95:.8);
     this.field=this.add.graphics();this.marks=this.add.graphics().setDepth(8);
     this.boyShadow=this.add.image(0,0,'shadow').setDisplaySize(130,25);

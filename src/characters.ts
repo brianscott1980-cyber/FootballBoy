@@ -106,5 +106,20 @@ export function makeCharacters(scene: Phaser.Scene){
   }
 
   bakeSet('boy-run-source','boy-action-source','zombie-source','enemy-variants-source','finale-source','');
+  // Derive the white Madrid strip from the existing shaded character textures.
+  // Only fabric hues change; skin, hair, silhouettes and animation frames stay aligned.
+  for(const key of scene.textures.getTextureKeys().filter(key=>/^(boy[0-7]|boy-jump|boy-kick|zombie[0-3]|zombie-(windup|slide|down)|(?:brute|tower)-(?:walk|tired)[01]|(?:brute|tower)-(?:slide|down)|boy-back|boy-back-kick|keeper-ready|keeper-dive)$/.test(key))){
+    const source=scene.textures.get(key).getSourceImage() as HTMLCanvasElement;
+    const texture=scene.textures.createCanvas('madrid-'+key,source.width,source.height)!,c=texture.context;
+    c.drawImage(source,0,0);const pixels=c.getImageData(0,0,source.width,source.height),d=pixels.data;
+    for(let i=0;i<d.length;i+=4){
+      if(d[i+3]<10)continue;const r=d[i],g=d[i+1],b=d[i+2];
+      const fabric=(g>r*1.12&&g>b*1.05)||(b>r*1.15&&b>g*1.05);
+      const y=Math.floor(i/4/source.width)/source.height;
+      const socks=!key.includes('back')&&!key.includes('keeper')&&y>.62&&y<.9&&((r>g*1.8&&g<80&&b<90)||(r<70&&g<70&&b<70));
+      if(fabric||socks){const light=190+Math.round((r*.21+g*.72+b*.07)*.24);d[i]=light;d[i+1]=light;d[i+2]=Math.min(255,light+5);}
+    }
+    c.putImageData(pixels,0,0);texture.refresh();
+  }
   bakeSet('boy-holytown-run-source','boy-holytown-action-source','enemy-yettfarm-source','enemy-yettfarm-variants-source','finale-holytown-source','holytown-');
 }

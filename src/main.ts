@@ -3,17 +3,17 @@ import { makeArt } from './art';
 import { loadCharacters, makeCharacters } from './characters';
 import { PenaltyScene } from './penalty';
 import { enemyProfile, applyEnemyHit, type EnemyKind } from './enemies';
-import { LEVEL_END, SPECIALS, CHARGE_PER_KNOCKOUT, type Special } from './rules';
+import { LEVEL_END, CHARGE_PER_KNOCKOUT, type Special } from './rules';
 import { LEVELS, LevelId, DEFAULT_LEVEL, LevelConfig } from './levels';
 import { stadiumAudio } from './audio';
 import './style.css';
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
-const GROUND=530, FINISH=LEVEL_END, RUN_SPEED=285;
+const GROUND=425, FINISH=LEVEL_END, RUN_SPEED=285;
 type Mode='ready'|'playing'|'transition'|'penalty'|'paused'|'won'|'lost';
 type Enemy={sprite:Phaser.Physics.Arcade.Sprite; shadow:Phaser.GameObjects.Image; state:'walk'|'windup'|'slide'|'hurt'|'down'; timer:number; stars:Phaser.GameObjects.Text[]; home:number; kind:EnemyKind; scale:number; hp:number; maxHp:number; attacks:Set<number>; pips:Phaser.GameObjects.Text};
 let mode:Mode='ready', resumeMode:'playing'|'penalty'='playing', finaleCheckpoint=false;
-const touch={jump:false,shoot:false};
+const touch={jump:false,shoot:false,special:false};
 export function isTouchOrMobile():boolean{
   const ua=navigator.userAgent||'';
   const isMobileUA=/iPhone|iPod|iPad|Android|Mobile|Tablet|Touch/i.test(ua);
@@ -38,6 +38,7 @@ class FootballBoy extends Phaser.Scene {
   introBannerText!:Phaser.GameObjects.Text; benchTexts:Phaser.GameObjects.Text[]=[];
   attackSequence=0;shotAttack=0;
   power=0;specialIndex=0;specialShots=0;activeSpecial:Special|null=null;specialElapsed=0;specialY=0;
+  flickTarget:Enemy|null=null;flickOrigin={x:0,y:0};flickImpact={x:0,y:0};flickExploded=false;
   effects!:Phaser.GameObjects.Graphics;transitionTimer?:Phaser.Time.TimerEvent;checkpoints=new Set<number>();
 
   preload(){loadCharacters(this);}
@@ -45,10 +46,10 @@ class FootballBoy extends Phaser.Scene {
     makeArt(this);makeCharacters(this);this.effects=this.add.graphics().setDepth(15);
     this.physics.world.setBounds(0,0,FINISH+450,640);
     this.backdrop=this.add.tileSprite(0,0,1280,640,this.currentLevel.backdropTexture).setOrigin(0).setScrollFactor(0);
-    this.pitch=this.add.tileSprite(0,GROUND,FINISH+1200,120,this.currentLevel.pitchTexture).setOrigin(0);
+    this.pitch=this.add.tileSprite(0,GROUND,FINISH+1200,230,this.currentLevel.pitchTexture).setOrigin(0);
     const ground=this.add.zone((FINISH+600)/2,GROUND+30,FINISH+600,60);this.physics.add.existing(ground,true);
     this.platforms=this.physics.add.staticGroup();
-    for(const [x,y] of [[1200,440],[2520,427],[3690,435],[4470,420],[6200,433],[7700,425],[9050,440],[11050,430],[12800,420]]){
+    for(const [x,y] of [[1200,335],[2520,322],[3690,330],[4470,315],[6200,328],[7700,320],[9050,335],[11050,325],[12800,315]]){
       const platform=this.platforms.create(x,y,this.currentLevel.platformTexture) as Phaser.Physics.Arcade.Sprite;platform.refreshBody();
       // One-way platforms let the automatic run continue beneath a missed jump.
       const body=platform.body as Phaser.Physics.Arcade.StaticBody;
@@ -82,6 +83,8 @@ class FootballBoy extends Phaser.Scene {
     this.keys=this.input.keyboard!.addKeys({jump:'SPACE',shoot:'X',pause:'P',escape:'ESC'}) as Record<string,Phaser.Input.Keyboard.Key>;
     this.input.keyboard!.addCapture(['SPACE','LEFT','RIGHT','UP','DOWN']);
     this.input.keyboard!.on('keydown-SPACE', (event: KeyboardEvent)=>{if(!event.repeat&&mode==='playing')this.queuedJump=true;});
+    this.input.keyboard!.on('keydown-C',(e:KeyboardEvent)=>{if(!e.repeat&&mode==='playing')this.shoot(true);});
+    this.input.keyboard!.on('keydown-V',(e:KeyboardEvent)=>{if(!e.repeat&&mode==='playing')this.shoot(true,'WHISTLE BLAST');});
     this.input.keyboard!.on('keydown-X', (event: KeyboardEvent)=>{if(!event.repeat&&mode==='playing')this.queuedShot=true;});
     window.addEventListener('keydown',e=>{if(e.code==='AltRight'){e.preventDefault();touch.shoot=true;if(mode==='playing')this.queuedShot=true;}if(e.code==='Escape'&&isFullscreen()){if(!document.fullscreenElement)leaveFullscreen();return;}if(e.code==='KeyP'||e.code==='Escape'){if(!e.repeat)togglePause();}});
     window.addEventListener('keyup',e=>{if(e.code==='AltRight')touch.shoot=false;});
@@ -98,7 +101,7 @@ class FootballBoy extends Phaser.Scene {
     });
 
     this.physics.pause();
-    Object.defineProperty(window,'footballBoy',{get:()=>({mode,audio:stadiumAudio.snapshot,level:this.currentLevel.id,levelEnd:FINISH,isTouchDevice:document.body.classList.contains('touch-device'),power:this.power,nextSpecial:SPECIALS[this.specialIndex%SPECIALS.length],activeSpecial:this.activeSpecial,specialShots:this.specialShots,penalty:penaltyScene.scene.isActive()?penaltyScene.snapshot:null,x:this.player.x,y:this.player.y,cameraX:this.cameras.main.scrollX,health:this.health,score:this.score,ball:this.ballState,enemies:this.enemies.map(e=>({x:e.sprite.x,y:e.sprite.y,state:e.state,kind:e.kind,scale:e.scale,hp:e.hp,maxHp:e.maxHp,tired:e.hp>0&&e.hp<e.maxHp,texture:e.sprite.texture.key})),grounded:this.player.body?.blocked.down,setLevel:(id:LevelId)=>this.selectLevel(id),beginPenalty:()=>this.beginPenalty()})});
+    Object.defineProperty(window,'footballBoy',{get:()=>({mode,audio:stadiumAudio.snapshot,level:this.currentLevel.id,levelEnd:FINISH,isTouchDevice:document.body.classList.contains('touch-device'),power:this.power,nextSpecial:this.levelSpecial(),activeSpecial:this.activeSpecial,specialShots:this.specialShots,penalty:penaltyScene.scene.isActive()?penaltyScene.snapshot:null,x:this.player.x,y:this.player.y,cameraX:this.cameras.main.scrollX,health:this.health,score:this.score,ball:this.ballState,enemies:this.enemies.map(e=>({x:e.sprite.x,y:e.sprite.y,state:e.state,kind:e.kind,scale:e.scale,hp:e.hp,maxHp:e.maxHp,tired:e.hp>0&&e.hp<e.maxHp,texture:e.sprite.texture.key})),grounded:this.player.body?.blocked.down,setLevel:(id:LevelId)=>this.selectLevel(id),beginPenalty:()=>this.beginPenalty()})});
   }
 
   selectLevel(id:LevelId){
@@ -154,7 +157,7 @@ class FootballBoy extends Phaser.Scene {
     if(introEyebrow)introEyebrow.textContent=this.currentLevel.eyebrow;
 
     const introH1=document.querySelector('.intro h1');
-    if(introH1)introH1.innerHTML=id==='holytown'?'Welcome to <em>Holytown.</em>':'Welcome to <em>Paradise.</em>';
+    if(introH1)introH1.innerHTML=id==='madrid'?'Welcome to <em>Madrid.</em>':id==='holytown'?'Welcome to <em>Holytown.</em>':'Welcome to <em>Paradise.</em>';
 
     const stampBadge=document.querySelector('.level-stamp span');
     if(stampBadge)stampBadge.textContent=this.currentLevel.tag.split('·')[0].trim();
@@ -163,7 +166,7 @@ class FootballBoy extends Phaser.Scene {
     if(stampTitle)stampTitle.textContent=this.currentLevel.name;
 
     const stampSmall=document.querySelector('.level-stamp small');
-    if(stampSmall)stampSmall.textContent=id==='holytown'?'LANARKSHIRE · OPEN DAYLIGHT':'GLASGOW · UNDER THE LIGHTS';
+    if(stampSmall)stampSmall.textContent=id==='madrid'?'MADRID / EUROPEAN NIGHT':id==='holytown'?'LANARKSHIRE · OPEN DAYLIGHT':'GLASGOW · UNDER THE LIGHTS';
 
     beep(520,.08,'sine',.03);
   }
@@ -184,13 +187,26 @@ class FootballBoy extends Phaser.Scene {
     this.releaseControls();mode='playing';$('overlay').classList.add('hidden');this.physics.resume();this.cameras.main.setScroll(0,0);this.updateHud();this.toast(this.currentLevel.startToast);
   }
   toast(message:string){$('toast').textContent=message;$('toast').style.opacity='1';this.time.delayedCall(1600,()=>{$('toast').style.opacity='0';});}
-  updateHud(){ $('hearts').textContent='♥ '.repeat(this.health)+'♡ '.repeat(5-this.health);$('score').textContent=String(this.score).padStart(2,'0');const progress=Math.min(100,Math.max(0,Math.floor((this.player.x-150)/(FINISH-150)*100)));$('progress').style.width=progress+'%';$('progress-label').textContent=progress+'%';$('special-fill').style.width=this.power+'%';$('special-count').textContent=this.power===100?'READY!':`${this.power/25} / 4`;$('special-name').textContent=SPECIALS[this.specialIndex%SPECIALS.length]+(this.power===100?' · NEXT KICK!':'');document.querySelector('.special-hud')!.classList.toggle('ready',this.power===100);}
-  shoot(){
+  levelSpecial():Special{return this.currentLevel.id==='madrid'?'OVERHEAD FLICK':this.currentLevel.id==='celtic'?'TOBY THE DOG':'FIRE SLIDE';}
+  updateHud(){
+    $('hearts').textContent='♥ '.repeat(this.health)+'♡ '.repeat(5-this.health);$('score').textContent=String(this.score).padStart(2,'0');
+    const progress=Math.min(100,Math.max(0,Math.floor((this.player.x-150)/(FINISH-150)*100)));$('progress').style.width=progress+'%';$('progress-label').textContent=progress+'%';
+    $('special-fill').style.width=this.power+'%';$('special-count').textContent=this.power===100?'READY!':(this.power/25)+' / 4';$('special-name').textContent=this.levelSpecial()+(this.power===100?' / C: SPECIAL!':'');
+    document.querySelector('.special-hud')!.classList.toggle('ready',this.power===100);const b=document.querySelector<HTMLButtonElement>('[data-control=special]')!;b.disabled=this.power<100||mode!=='playing';b.classList.toggle('ready',this.power===100);
+  }
+  shoot(special=false,override?:Special){
+    if(special&&this.power<100)return;
     if(this.ballState!=='feet'||this.shotCooldown>0)return;
+    if(special&&(override??this.levelSpecial())==='OVERHEAD FLICK'){
+      this.flickTarget=this.enemies.filter(e=>e.state!=='down').sort((a,b)=>Phaser.Math.Distance.Between(this.player.x,this.player.y,a.sprite.x,a.sprite.y)-Phaser.Math.Distance.Between(this.player.x,this.player.y,b.sprite.x,b.sprite.y))[0]??null;
+      if(!this.flickTarget)return;
+      this.flickOrigin={x:this.player.x-28,y:this.player.y+36};this.flickExploded=false;
+    }
     this.shotAttack=++this.attackSequence;this.ballState='out';this.shotStart=this.player.x;this.shotCooldown=.5;this.shootPose=.22;this.specialY=this.player.y+21;
     this.ball.setPosition(this.player.x+43,this.specialY);beep(330,.12,'triangle');
-    if(this.power===100){
-      this.activeSpecial=SPECIALS[this.specialIndex++%SPECIALS.length];stadiumAudio.react('trick');this.specialShots++;this.power=0;this.specialElapsed=0;this.updateHud();this.toast(this.activeSpecial+'!');
+    if(special){
+      this.activeSpecial=override??this.levelSpecial();stadiumAudio.react('trick');this.specialShots++;this.power=0;this.specialElapsed=0;this.updateHud();this.toast(this.activeSpecial+'!');
+      if(this.activeSpecial==='OVERHEAD FLICK'){this.ball.setPosition(this.flickOrigin.x,this.flickOrigin.y);this.shootPose=.55;}
       if(this.activeSpecial==='BICYCLE KICK')this.tweens.add({targets:this.player,angle:-360,duration:520,onComplete:()=>this.player.setAngle(0)});
       if(this.activeSpecial==='FIREBALL')this.ball.setTint(0xffb044).setDisplaySize(43,43);
       if(this.activeSpecial==='WHISTLE BLAST'){
@@ -201,11 +217,52 @@ class FootballBoy extends Phaser.Scene {
     }
   }
   endSpecial(){
-    this.activeSpecial=null;this.effects.clear();this.ball.setVisible(true).clearTint().setDisplaySize(31.32,31.32);this.ballState='return';
+    this.activeSpecial=null;this.player.setAngle(0);this.effects.clear();this.ball.setVisible(true).clearTint().setDisplaySize(31.32,31.32);this.ballState='return';
   }
   updateSpecial(dt:number){
     this.specialElapsed+=dt;this.effects.clear();const type=this.activeSpecial;
+    if(type==='OVERHEAD FLICK'){
+      const target=this.flickTarget!;
+      if(!this.flickExploded){
+        const t=Math.min(1,this.specialElapsed/1.05),x=target.sprite.x,y=(target.sprite.body as Phaser.Physics.Arcade.Body).top+18;
+        // A quadratic arc lifts the ball from behind the heel, over the head,
+        // and steers down onto the selected opponent even while they move.
+        this.ball.x=Phaser.Math.Linear(this.flickOrigin.x,x,t);
+        this.ball.y=Phaser.Math.Linear(this.flickOrigin.y,y,t)-Math.sin(Math.PI*t)*210;
+        this.ball.rotation+=dt*22;
+        this.effects.lineStyle(3,0xffe7a6,.65);this.effects.strokeCircle(this.ball.x,this.ball.y,22);
+        this.effects.lineStyle(2,0xffdf8a,.7);this.effects.strokeEllipse(x,GROUND-5,65,15);
+        if(t===1){
+          this.flickImpact={x,y};this.flickExploded=true;this.ball.setVisible(false);
+          if(target.state!=='down'){target.hp=0;this.knockOut(target);}
+          this.cameras.main.shake(180,.009);beep(85,.28,'sawtooth',.06);
+        }
+      }
+      if(this.flickExploded){
+        const t=Math.min(1,(this.specialElapsed-1.05)/.48),g=this.effects,{x,y}=this.flickImpact;
+        g.fillStyle(0xfff3b5,(1-t)*.8);g.fillCircle(x,y,18+t*65);
+        g.lineStyle(7,0xffa12d,1-t);g.strokeCircle(x,y,20+t*100);
+        for(let i=0;i<12;i++){const a=i*Math.PI/6;g.fillStyle(i%2?0xffc53c:0xff7130,1-t);g.fillCircle(x+Math.cos(a)*t*110,y+Math.sin(a)*t*80,12*(1-t)+2);}
+        if(t===1){this.flickTarget=null;this.endSpecial();}
+      }
+      return;
+    }
+    if(type==='TOBY THE DOG'||type==='FIRE SLIDE'){
+      const slide=type==='FIRE SLIDE',x=slide?this.player.x+65:this.shotStart+this.specialElapsed*720,y=GROUND-32,g=this.effects;
+      this.ball.setVisible(false);
+      if(slide){this.player.setAngle(-65);this.invulnerable=Math.max(this.invulnerable,.12);}
+      for(let i=0;i<12;i++){g.fillStyle(slide?(i%2?0xff6428:0xffcc49):0xcce8ac,.65-i*.05);g.fillCircle(x-i*9,GROUND-18-Math.sin(i+this.specialElapsed*22)*9,12-i*.65);}
+      if(!slide){const bounce=Math.sin(this.specialElapsed*24)*6;g.fillStyle(0xb77a45);g.fillEllipse(x,y+bounce,65,30);g.fillCircle(x+31,y-13+bounce,18);g.fillStyle(0x65432d);g.fillEllipse(x+21,y-12+bounce,13,28);g.lineStyle(8,0xb77a45);g.lineBetween(x-28,y,x-46,y-25+bounce);for(const offset of [-20,18]){g.lineStyle(7,0xb77a45);g.lineBetween(x+offset,y+8,x+offset+Math.sin(this.specialElapsed*24+offset)*12,GROUND-3);}g.fillStyle(0x191d20);g.fillCircle(x+43,y-14+bounce,4);g.fillCircle(x+35,y-20+bounce,3);g.lineStyle(4,0x39b66a);g.lineBetween(x+22,y-3+bounce,x+30,y+1+bounce);}
+      for(const e of this.enemies)if(e.state!=='down'&&Math.abs(e.sprite.x-x)<85)this.hitEnemy(e,this.shotAttack);
+      if(this.specialElapsed>(slide?1.5:1.8))this.endSpecial();return;
+    }
     if(type==='WHISTLE BLAST'){
+      const x=this.player.x,y=this.player.y,wave=Math.sin(this.specialElapsed*24)*10;
+      this.player.setTexture(this.currentLevel.prefix+'boy0');
+      this.effects.lineStyle(9,0xe6b18c);this.effects.lineBetween(x+8,y-10,x+8,y-16);this.effects.lineBetween(x-12,y-8,x-30,y-65+wave);
+      this.effects.fillStyle(0xf04444);this.effects.fillRoundedRect(x-42,y-95+wave,25,35,3);
+      this.effects.lineStyle(2,0x173a35);this.effects.lineBetween(x+8,y-16,x+5,y-20);this.effects.fillStyle(0xdce6e9);this.effects.fillRoundedRect(x+1,y-21,12,7,3);
+
       for(let i=0;i<3;i++){const radius=(this.specialElapsed*850+i*90)%850;this.effects.lineStyle(4,0xdaf6b1,Math.max(0,1-radius/850));this.effects.strokeEllipse(this.shotStart+radius*.6,GROUND-75,radius*.9,radius*.45);}
       if(this.specialElapsed>.8)this.endSpecial();return;
     }
@@ -349,10 +406,10 @@ function togglePause(){
     mode=resumeMode;void stadiumAudio.resume();scene.releaseControls();if(mode==='penalty')scene.scene.resume('finale');else scene.physics.resume();$('overlay').classList.add('hidden');$('pause').setAttribute('aria-label','Pause game');
   }
 }
-$('play').addEventListener('click',()=>{if(!scene.player)return;if(mode==='paused')togglePause();else if(mode==='lost'&&finaleCheckpoint)scene.beginPenalty();else scene.start();});
+$('play').addEventListener('click',()=>{if(frame.classList.contains('is-fullscreen')&&!document.fullscreenElement)void frame.requestFullscreen?.().catch(()=>{});if(!scene.player)return;if(mode==='paused')togglePause();else if(mode==='lost'&&finaleCheckpoint)scene.beginPenalty();else scene.start();});
 $('restart').addEventListener('click',()=>{if(scene.player)scene.start();});$('pause').addEventListener('click',togglePause);
 $('sound').addEventListener('click',()=>{void stadiumAudio.setEnabled(!stadiumAudio.enabled);syncSoundButton();});
-for(const button of document.querySelectorAll<HTMLButtonElement>('[data-control]')){const control=button.dataset.control as keyof typeof touch;button.addEventListener('pointerdown',e=>{e.preventDefault();button.setPointerCapture(e.pointerId);touch[control]=true;if(control==='jump'&&mode==='playing')scene.queuedJump=true;if(control==='shoot'&&mode==='playing')scene.queuedShot=true;if(mode==='penalty'&&control==='shoot')penaltyScene.beginCharge();button.classList.add('active');});const release=()=>{touch[control]=false;if(mode==='penalty'&&control==='shoot')penaltyScene.releaseCharge();button.classList.remove('active');};button.addEventListener('pointerup',release);button.addEventListener('pointercancel',release);button.addEventListener('lostpointercapture',release);}
+for(const button of document.querySelectorAll<HTMLButtonElement>('[data-control]')){const control=button.dataset.control as keyof typeof touch;button.addEventListener('pointerdown',e=>{e.preventDefault();button.setPointerCapture(e.pointerId);touch[control]=true;if(control==='jump'&&mode==='playing')scene.queuedJump=true;if(control==='shoot'&&mode==='playing')scene.queuedShot=true;if(control==='special'&&mode==='playing')scene.shoot(true);if(mode==='penalty'&&control==='shoot')penaltyScene.beginCharge();button.classList.add('active');});const release=()=>{touch[control]=false;if(mode==='penalty'&&control==='shoot')penaltyScene.releaseCharge();button.classList.remove('active');};button.addEventListener('pointerup',release);button.addEventListener('pointercancel',release);button.addEventListener('lostpointercapture',release);}
 const frame=document.querySelector<HTMLElement>('.game-frame')!;
 function isFullscreen(){return !!document.fullscreenElement||frame.classList.contains('is-fullscreen');}
 function syncFullscreen(){
@@ -386,4 +443,5 @@ function resize(){
   game.scale.setGameSize(width,640);
   if(scene.backdrop){scene.backdrop.width=width;scene.cameras.main.setFollowOffset(150-width/2,0);}
 }
+frame.classList.add('is-fullscreen');syncFullscreen();
 window.addEventListener('resize',resize);game.events.once('ready',resize);resize();

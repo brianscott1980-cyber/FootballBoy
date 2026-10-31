@@ -7,9 +7,9 @@ test('music and Liam chant load; knockouts and tricks trigger crowd reactions',a
  await expect.poll(async()=>(await state(page)).audio.contextState).toBe('running');
  expect((await state(page)).audio.loadError).toBe(null);expect((await state(page)).audio.loopsStarted).toBe(1);
  await expect.poll(async()=>(await state(page)).audio.chants,{timeout:4000}).toBeGreaterThan(0);
- await page.evaluate(async()=>{const entry=[...document.scripts].find(s=>s.src.includes('/src/main.ts'))!.src;const {game}=await import(/* @vite-ignore */ entry);const match=game.scene.getScene('match');match.enemies.forEach((e:any,i:number)=>e.sprite.setPosition(i===0?match.player.x+200:14000+i*100,530-49*e.scale));});
+ await page.evaluate(async()=>{const entry=[...document.scripts].find(s=>s.src.includes('/src/main.ts'))!.src;const {game}=await import(/* @vite-ignore */ entry);const match=game.scene.getScene('match');match.enemies.forEach((e:any,i:number)=>e.sprite.setPosition(i===0?match.player.x+200:14000+i*100,425-49*e.scale));});
  await page.keyboard.press('x');await expect.poll(async()=>(await state(page)).audio.lastReaction).toBe('knockout');
- await expect.poll(async()=>(await state(page)).ball).toBe('feet');await page.evaluate(async()=>{const entry=[...document.scripts].find(s=>s.src.includes('/src/main.ts'))!.src;const {game}=await import(/* @vite-ignore */ entry);game.scene.getScene('match').power=100;});await page.keyboard.press('x');
+ await expect.poll(async()=>(await state(page)).ball).toBe('feet');await page.evaluate(async()=>{const entry=[...document.scripts].find(s=>s.src.includes('/src/main.ts'))!.src;const {game}=await import(/* @vite-ignore */ entry);game.scene.getScene('match').power=100;});await page.keyboard.press('c');
  await expect.poll(async()=>(await state(page)).audio.lastReaction).toBe('trick');expect((await state(page)).audio.crowdReactions).toBeGreaterThanOrEqual(2);expect(errors).toEqual([]);
 });
 test('pause, mute and resume preserve a single music loop and remember mute',async({page})=>{

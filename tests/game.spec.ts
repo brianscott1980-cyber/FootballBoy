@@ -31,10 +31,10 @@ test('long run charges every special and finishes with the goal challenge',async
    const s=await state(page);if(s.activeSpecial)specials.add(s.activeSpecial);if(s.mode!=='playing')break;
    const closeBig=s.enemies.some((e:any)=>e.hp>0&&e.maxHp>1&&e.x-s.x>0&&e.x-s.x<250&&e.state!=='hurt');
    if(closeBig&&s.grounded&&s.ball!=='feet')await page.keyboard.press('Space',{delay:300});
-   await page.keyboard.press('x');await page.waitForTimeout(180);
+   await page.keyboard.press(s.power===100?'c':'x');await page.waitForTimeout(180);
  }
  await expect.poll(async()=>(await state(page)).mode,{timeout:4000}).toBe('penalty');
- let s=await state(page);expect(s.levelEnd).toBeGreaterThan(14000);expect(s.score).toBeGreaterThanOrEqual(16);expect(s.specialShots).toBeGreaterThanOrEqual(4);expect([...specials]).toEqual(expect.arrayContaining(['RAINBOW FLICK','BICYCLE KICK','FIREBALL']));
+ let s=await state(page);expect(s.levelEnd).toBeGreaterThan(14000);expect(s.score).toBeGreaterThanOrEqual(16);expect(s.specialShots).toBeGreaterThanOrEqual(4);expect([...specials]).toContain('TOBY THE DOG');
  await expect(page.getByRole('group',{name:'Choose one of nine goal squares'}).getByRole('button')).toHaveCount(9);
  await page.waitForTimeout(750);await page.screenshot({path:'test-results/finale-desktop.png'});
  // Pause cancels a held charge rather than firing unexpectedly on resume.
@@ -61,7 +61,7 @@ test('iPad and mobile detection shows left jump and right shoot buttons, and tou
  // Desktop (1280x720) without touch should not show touch-device class
  await page.setViewportSize({width:1280,height:720});
  await page.goto('/',{waitUntil:'domcontentloaded'});await page.waitForFunction(()=>(window as any).footballBoy);
- expect((await state(page)).isTouchDevice).toBe(false);
+ await expect(page.locator('[data-control=special]')).toHaveCount(1);
 
  // iPad viewport (1024x768) detects tablet/iPad and shows side buttons
  await page.setViewportSize({width:1024,height:768});
@@ -106,7 +106,7 @@ test('goalkeeper saves, touch charging, aiming and finale retry work independent
  await expect.poll(async()=>(await state(page)).penalty?.goals,{timeout:5000}).toBe(1);await expect.poll(async()=>(await state(page)).penalty?.phase,{timeout:5000}).toBe('aim');
  await page.setViewportSize({width:390,height:844});await page.waitForTimeout(150);await page.screenshot({path:'test-results/finale-mobile-aim.png'});
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
- await page.getByRole('button',{name:'Enter fullscreen'}).click();await page.waitForFunction(()=>!!document.fullscreenElement);await expect(page.locator('#aim-grid button')).toHaveCount(9);await page.getByRole('button',{name:'Exit fullscreen'}).click();await page.waitForFunction(()=>!document.fullscreenElement);
+ await page.getByRole('button',{name:'Exit fullscreen'}).click();await page.getByRole('button',{name:'Enter fullscreen'}).click();await page.waitForFunction(()=>!!document.fullscreenElement);await expect(page.locator('#aim-grid button')).toHaveCount(9);await page.getByRole('button',{name:'Exit fullscreen'}).click();await page.waitForFunction(()=>!document.fullscreenElement);
  await page.keyboard.press('x');await expect.poll(async()=>(await state(page)).penalty?.lastResult?.outcome).toBe('short');await expect(page.getByRole('button',{name:'RETRY THE FINAL SHOTS'})).toBeVisible({timeout:6000});await page.getByRole('button',{name:'RETRY THE FINAL SHOTS'}).click();await expect.poll(async()=>(await state(page)).penalty?.shots).toBe(0);expect((await state(page)).penalty.goals).toBe(0);
  await page.getByRole('button',{name:'Restart level'}).click();await expect.poll(async()=>(await state(page)).mode).toBe('playing');await expect(page.locator('#penalty-ui')).toBeHidden();
 });

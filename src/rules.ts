@@ -1,6 +1,6 @@
 export const LEVEL_END=14550;
 export const SPECIALS=['RAINBOW FLICK','BICYCLE KICK','FIREBALL','WHISTLE BLAST'] as const;
-export type Special=typeof SPECIALS[number];
+export type Special=typeof SPECIALS[number]|'TOBY THE DOG'|'FIRE SLIDE'|'OVERHEAD FLICK';
 export const CHARGE_PER_KNOCKOUT=25;
 export const POWER_CYCLE_MS=1800;
 export const SHOTS_ALLOWED=3;
